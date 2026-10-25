@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "caloogy-calendar"
+dynamic = ["version"]
+description = "Command line for calendar.caloogy.com — for you and for Claude Code / Codex"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+caloogy-calendar = "caloogy_calendar.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "caloogy_calendar.__version__" }
+
+[tool.setuptools.package-data]
+caloogy_calendar = ["SKILL.md"]
