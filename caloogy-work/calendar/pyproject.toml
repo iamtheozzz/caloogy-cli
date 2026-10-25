@@ -8,6 +8,7 @@ dynamic = ["version"]
 description = "Command line for calendar.caloogy.com — for you and for Claude Code / Codex"
 readme = "README.md"
 requires-python = ">=3.9"
+license = { text = "MIT" }
 dependencies = []
 
 [project.scripts]

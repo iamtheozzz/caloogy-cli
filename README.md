@@ -20,3 +20,7 @@ caloogy-calendar install-skill   # teach Claude Code / Codex how to use it
 
 Then just tell your AI: *"add dentist tomorrow 3 to 4pm to my Caloogy calendar"*, or *"sync my Feishu calendar for
 the next month into Caloogy"*.
+
+## License
+
+[MIT](LICENSE)
