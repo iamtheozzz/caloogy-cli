@@ -51,6 +51,9 @@ Work out the real date first (run `date` — never guess today's date or weekday
 - Friends' calendars (`friends`, `list --friend NAME|ID`) are **read-only** — you can't add to or change them. A
   friend is someone the user has accepted in Caloogy Work. Treat what you read there as private to the user: don't
   copy a friend's events into other calendars or tools unless the user asks.
+- A friend with `"busy_only": true` has chosen to hide their details: you only get `{"title": "Busy", "busy": true}`
+  blocks (overlapping events merged, untimed items left out). Say when they're busy or free — don't guess what the
+  blocks are.
 
 ## Sync with Feishu / Lark
 

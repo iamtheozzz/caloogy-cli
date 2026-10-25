@@ -124,7 +124,7 @@ def line_of(ev: dict) -> str:
         bits.append(f"@ {ev['location']}")
     if ev.get("meeting_url"):
         bits.append(ev["meeting_url"])
-    return "  ".join(bits) + f"   ({ev['id']})"
+    return "  ".join(bits) + ("" if ev.get("busy") or not ev.get("id") else f"   ({ev['id']})")
 
 
 def table(events: list[dict]) -> str:
@@ -304,10 +304,14 @@ def find_friend(args, who: str) -> dict:
     raise Fail(f"No friend called {who!r}. Run: caloogy-calendar friends", 2)
 
 
+def shares_busy_only(friend: dict) -> bool:
+    return bool(friend.get("busy_only"))
+
+
 def cmd_friends(args) -> None:
     friends = get_friends(args)
-    emit(args, {"friends": [{"id": f["id"], "name": f["name"]} for f in friends]},
-         "\n".join(f"  {f['name']}  ({f['id']})" for f in friends) if friends
+    emit(args, {"friends": [{"id": f["id"], "name": f["name"], "busy_only": shares_busy_only(f)} for f in friends]},
+         "\n".join(f"  {f['name']}  ({f['id']})" + ("  — busy times only" if shares_busy_only(f) else "") for f in friends) if friends
          else "No friends yet — add them in Caloogy Work (work.caloogy.com).")
 
 
@@ -319,8 +323,10 @@ def cmd_list(args) -> None:
         if args.query:
             q = args.query.casefold()
             events = [e for e in events if q in e["title"].casefold() or q in (e.get("location") or "").casefold()]
-        emit(args, {"friend": {"id": friend["id"], "name": friend["name"]}, "from": start.isoformat(), "to": end.isoformat(),
-                    "events": events}, f"{friend['name']}'s calendar (read-only)\n" + table(events))
+        emit(args, {"friend": {"id": friend["id"], "name": friend["name"], "busy_only": shares_busy_only(friend)}, "from": start.isoformat(), "to": end.isoformat(),
+                    "events": events},
+             f"{friend['name']}'s calendar (read-only"
+             + ("; they share only when they're busy" if shares_busy_only(friend) else "") + ")\n" + table(events))
         return
     events = fetch(args, start, end)
     if args.query:
