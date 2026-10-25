@@ -276,18 +276,52 @@ def range_of(args) -> tuple[date, date]:
     return start, end
 
 
-def fetch(args, start: date, end: date) -> list[dict]:
+def fetch(args, start: date, end: date, base: str = "/api/events") -> list[dict]:
     out: list[dict] = []
     cur = start
     while cur <= end:                                     # the server answers up to 400 days at a time
         stop = min(end, cur + timedelta(days=399))
-        out += api(args, "GET", f"/api/events?from={cur.isoformat()}&to={stop.isoformat()}")["events"]
+        out += api(args, "GET", f"{base}?from={cur.isoformat()}&to={stop.isoformat()}")["events"]
         cur = stop + timedelta(days=1)
     return out
 
 
+def get_friends(args) -> list[dict]:
+    return api(args, "GET", "/api/friends")["friends"]
+
+
+def find_friend(args, who: str) -> dict:
+    """a friend by 8-character id, or by name (exact, then unique start / substring, case-insensitive)"""
+    friends = get_friends(args)
+    w = who.strip().casefold()
+    for test in (lambda f: f["id"] == w, lambda f: f["name"].casefold() == w,
+                 lambda f: f["name"].casefold().startswith(w), lambda f: w in f["name"].casefold()):
+        hits = [f for f in friends if test(f)]
+        if len(hits) == 1:
+            return hits[0]
+        if len(hits) > 1:
+            raise Fail(f"{who!r} matches several friends: " + ", ".join(f"{f['name']} ({f['id']})" for f in hits) + " — use the id", 2)
+    raise Fail(f"No friend called {who!r}. Run: caloogy-calendar friends", 2)
+
+
+def cmd_friends(args) -> None:
+    friends = get_friends(args)
+    emit(args, {"friends": [{"id": f["id"], "name": f["name"]} for f in friends]},
+         "\n".join(f"  {f['name']}  ({f['id']})" for f in friends) if friends
+         else "No friends yet — add them in Caloogy Work (work.caloogy.com).")
+
+
 def cmd_list(args) -> None:
     start, end = range_of(args)
+    if args.friend:
+        friend = find_friend(args, args.friend)
+        events = fetch(args, start, end, f"/api/friends/{friend['id']}/events")
+        if args.query:
+            q = args.query.casefold()
+            events = [e for e in events if q in e["title"].casefold() or q in (e.get("location") or "").casefold()]
+        emit(args, {"friend": {"id": friend["id"], "name": friend["name"]}, "from": start.isoformat(), "to": end.isoformat(),
+                    "events": events}, f"{friend['name']}'s calendar (read-only)\n" + table(events))
+        return
     events = fetch(args, start, end)
     if args.query:
         q = args.query.casefold()
@@ -487,7 +521,11 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("list", parents=[common], help="show events")
     ranged(s, 7)
     s.add_argument("--query", "-q", help="only events whose title or location contains this")
+    s.add_argument("--friend", "-f", help="a friend's calendar instead of yours (name or id from `friends`; read-only)")
     s.set_defaults(fn=cmd_list)
+
+    s = sub.add_parser("friends", parents=[common], help="your friends (whose calendars you can read with list --friend)")
+    s.set_defaults(fn=cmd_friends)
 
     def fields(sp, title_positional: bool):
         if title_positional:

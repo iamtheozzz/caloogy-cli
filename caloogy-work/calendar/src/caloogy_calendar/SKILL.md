@@ -1,6 +1,6 @@
 ---
 name: caloogy-calendar
-description: Read and write the user's Caloogy calendar (calendar.caloogy.com) with the caloogy-calendar CLI — add, list, change, tick off or delete events from plain language ("dentist tomorrow 3 to 4pm"), and sync events between Caloogy and Feishu / Lark (lark-cli or feishu-cli), Google Calendar or .ics files in either direction. Use when the user mentions their Caloogy calendar, calendar.caloogy.com, or asks to copy / sync calendar events into or out of Caloogy.
+description: Read and write the user's Caloogy calendar (calendar.caloogy.com) with the caloogy-calendar CLI — add, list, change, tick off or delete events from plain language, read their friends' calendars (read-only) ("dentist tomorrow 3 to 4pm"), and sync events between Caloogy and Feishu / Lark (lark-cli or feishu-cli), Google Calendar or .ics files in either direction. Use when the user mentions their Caloogy calendar, calendar.caloogy.com, or asks to copy / sync calendar events into or out of Caloogy.
 ---
 
 # caloogy-calendar
@@ -38,6 +38,8 @@ Work out the real date first (run `date` — never guess today's date or weekday
 | "move the dentist to 5pm" | `list` to find its `id`, then `update <id> --start 17:00 --end 18:00 --json` |
 | "I did the gym" | `update <id> --done --json` |
 | "cancel the dentist" | `list`, then `delete <id> --json` |
+| "is Sam free Friday afternoon?" | `caloogy-calendar list --friend Sam --date 2026-10-30 --json` |
+| "who are my friends on Caloogy?" | `caloogy-calendar friends --json` |
 
 - Titles are short ("Dentist", "1:1 with Ann") — time, place and people go in their own flags.
 - No end time given → leave `--end` out (the calendar shows 30 minutes); don't invent one.
@@ -46,6 +48,9 @@ Work out the real date first (run `date` — never guess today's date or weekday
   `add` / `update` / `list`, and `list` again if one says "No event with that id".
 - An event can't cross midnight: add one piece per day (e.g. 22:00–24:00 and 00:00–02:00).
 - Ask before deleting more than a couple of events, and before any bulk import into the calendar.
+- Friends' calendars (`friends`, `list --friend NAME|ID`) are **read-only** — you can't add to or change them. A
+  friend is someone the user has accepted in Caloogy Work. Treat what you read there as private to the user: don't
+  copy a friend's events into other calendars or tools unless the user asks.
 
 ## Sync with Feishu / Lark
 
@@ -95,7 +100,8 @@ list and confirm before creating many events.
 
 ```
 login [--no-wait | --device-code C] [--no-browser] [--name N]   logout   whoami
-list   [--date D | --from D --to D | --days N] [-q TEXT]
+list   [--date D | --from D --to D | --days N] [-q TEXT] [--friend NAME|ID]
+friends
 add    TITLE --date D [--start T] [--end T | --duration 1h30m] [--location L] [--attendees "A, B"] [--meeting-url U]
 update ID [--title] [--date] [--start] [--end] [--duration] [--clear-time] [--done | --not-done] [--location] ...
 delete ID [ID ...]

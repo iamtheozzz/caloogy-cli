@@ -19,8 +19,8 @@ caloogy-calendar login
 ```
 
 It prints a link and a code and opens your browser. Check that the page shows the same code, and choose **Allow**. The
-token is saved in `~/.config/caloogy/calendar.json` (only you can read it). It can add, change and delete events —
-nothing else in your account. See or revoke connected tools on calendar.caloogy.com under your avatar →
+token is saved in `~/.config/caloogy/calendar.json` (only you can read it). It can add, change and delete your
+events and read (not change) your friends' calendars — nothing else in your account. See or revoke connected tools on calendar.caloogy.com under your avatar →
 **Command-line access**; `caloogy-calendar logout` revokes this computer's token.
 
 ## Let your AI use it
@@ -33,6 +33,7 @@ Restart Claude Code / Codex, then talk normally:
 
 - "Put *dinner with Sam* on my Caloogy calendar Friday 7 to 9pm."
 - "What's on my calendar this week?"
+- "Is Sam free on Friday afternoon?" (friends' calendars are read-only)
 - "Move tomorrow's dentist to 5pm." · "Tick off the gym."
 - "Copy everything from my Feishu calendar for November into Caloogy." (uses `lark-cli` or `feishu-cli`)
 - "Put the Caloogy events that aren't in Feishu yet into Feishu."
@@ -47,6 +48,8 @@ caloogy-calendar list --days 7                                  # --json for scr
 caloogy-calendar update 2026-10-25-1a2b3c4d --start 17:00 --end 18:00
 caloogy-calendar update 2026-10-25-1a2b3c4d --done
 caloogy-calendar delete 2026-10-25-1a2b3c4d
+caloogy-calendar friends                                        # your friends in Caloogy Work
+caloogy-calendar list --friend Sam --days 7                     # a friend's calendar, read-only
 
 lark-cli calendar +agenda --as user --start 2026-11-01 --end 2026-11-30 > feishu.json
 caloogy-calendar import feishu.json --dry-run                  # then without --dry-run
