@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "caloogy-docs"
+dynamic = ["version"]
+description = "Command line for docs.caloogy.com — for you and for Claude Code / Codex"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+caloogy-docs = "caloogy_docs.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "caloogy_docs.__version__" }
+
+[tool.setuptools.package-data]
+caloogy_docs = ["SKILL.md"]
