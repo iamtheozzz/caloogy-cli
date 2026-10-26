@@ -150,7 +150,7 @@ def summary(args, d: dict, me: str | None = None, role: str | None = None) -> di
 
 def full(args, d: dict) -> dict:
     out = summary(args, d)
-    out.update({"content": d.get("content", ""), "created": when(d.get("created")), "can_write": d.get("role") == "owner"})
+    out.update({"content": d.get("content", ""), "created": when(d.get("created")), "can_write": d.get("role") in WRITERS})
     return out
 
 
@@ -173,11 +173,22 @@ def get_doc(args, ref: str) -> dict:
     return api(args, "GET", f"/api/docs/{doc_id(ref)}")
 
 
+WRITERS = ("owner", "manage", "edit")
+
+
+def writable(d: dict) -> dict:
+    """a document I may change: mine, or shared with me as an editor / manager"""
+    if d.get("role") not in WRITERS:
+        who = (d.get("ownerUser") or {}).get("name") or d.get("owner")
+        raise Fail(f"“{title_of(d)}” is {who}'s and you can only view it. Ask them for edit access, or make your own copy: "
+                   f"caloogy-docs read {d['id']} | caloogy-docs new \"…\" --file -", 1)
+    return d
+
+
 def mine(d: dict) -> dict:
     if d.get("role") != "owner":
         who = (d.get("ownerUser") or {}).get("name") or d.get("owner")
-        raise Fail(f"“{title_of(d)}” belongs to {who} — the command line can only change your own documents. "
-                   f"(Copy it with: caloogy-docs read {d['id']} | caloogy-docs new \"…\" --file -)", 1)
+        raise Fail(f"“{title_of(d)}” belongs to {who} — only the owner can move it to the trash.", 1)
     return d
 
 
@@ -342,7 +353,7 @@ def cmd_write(args) -> None:
     content = read_text(args)
     if content is None and args.title is None:
         raise Fail("Give the new text with --file (- for stdin) or --text, and/or a new --title.", 2)
-    d = mine(get_doc(args, args.doc))
+    d = writable(get_doc(args, args.doc))
     body = {}
     if content is not None:
         body["content"] = content
@@ -359,7 +370,7 @@ def cmd_append(args) -> None:
     if text is None:
         raise Fail("Give the text to add with --file (- for stdin) or --text.", 2)
     for attempt in (0, 1):                          # someone saved in between: read again and add once more
-        d = mine(get_doc(args, args.doc))
+        d = writable(get_doc(args, args.doc))
         cur = d.get("content") or ""
         sep = "" if not cur or cur.endswith("\n\n") else "\n" if cur.endswith("\n") else "\n\n"   # one blank line between
         new = cur + sep + text + ("" if text.endswith("\n") else "\n")
@@ -372,7 +383,7 @@ def cmd_append(args) -> None:
 
 def cmd_edit(args) -> None:
     for attempt in (0, 1):
-        d = mine(get_doc(args, args.doc))
+        d = writable(get_doc(args, args.doc))
         if args.rev is not None and d["rev"] != args.rev:
             raise Fail(f"The document changed since revision {args.rev} (now {d['rev']}). Read it again and redo the change.")
         new, n = replace_once(d.get("content") or "", args.old, args.new, args.all)
@@ -384,7 +395,7 @@ def cmd_edit(args) -> None:
 
 
 def cmd_rename(args) -> None:
-    d = mine(get_doc(args, args.doc))
+    d = writable(get_doc(args, args.doc))
     r = put(args, d, {"title": args.title}, None)
     d["title"] = args.title
     saved(args, d, r, "Renamed to")

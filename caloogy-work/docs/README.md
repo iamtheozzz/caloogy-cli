@@ -1,7 +1,7 @@
 # caloogy-docs
 
 The command line for [docs.caloogy.com](https://docs.caloogy.com): list the documents you can open, read them as
-Markdown, and create, edit, rename, trash and restore your own. Made to be driven by Claude Code, Codex and other
+Markdown, create and edit your own and the ones shared with you as an editor, and trash or restore your own. Made to be driven by Claude Code, Codex and other
 terminal AI tools — every command has `--json`. Python 3.9+, no dependencies.
 
 Guide: <https://guide.caloogy.com/cli/work/docs/>
@@ -22,8 +22,9 @@ caloogy-docs login
 
 It prints a link and a code and opens your browser. Check that the page shows the same code, and choose **Allow**. The
 token is saved in `~/.config/caloogy/docs.json` (only you can read it). It can **read** every document you can open
-(yours, ones shared with you, public ones) and **change only your own** documents — never other people's, never who a
-document is shared with, and it can't delete anything for good (deleting moves to the trash). See or revoke connected
+(yours, ones shared with you, public ones) and **change** your own and the ones shared with you as *Can edit* /
+*Can manage* — the same as you can on the website. It can't change who a document is shared with, trash other
+people's documents, or delete anything for good (deleting moves your own documents to the trash). See or revoke connected
 tools on docs.caloogy.com under your avatar → **Command-line access**; `caloogy-docs logout` revokes this computer's
 token.
 
@@ -60,8 +61,8 @@ How documents work:
   `https://docs.caloogy.com/<owner id>/<doc id>`. Every command takes the id or the link.
 - Every save bumps the revision (`rev`). `edit` and `append` re-read and apply on top of the latest version, so they
   never wipe someone else's change; `write --rev N` refuses if the document moved on since you read revision N.
-- Documents shared with you are read-only here, whatever your role on the website. Copy one into your own with
-  `caloogy-docs read <id> | caloogy-docs new "My copy" --file -`.
+- Documents shared with you as *Can edit* / *Can manage* can be changed; *Can view* ones are read-only — copy one
+  into your own with `caloogy-docs read <id> | caloogy-docs new "My copy" --file -`. Only the owner can trash one.
 - Changes show up on docs.caloogy.com on reload.
 
 Exit codes: 0 ok · 1 failed · 2 bad arguments · 3 not logged in.

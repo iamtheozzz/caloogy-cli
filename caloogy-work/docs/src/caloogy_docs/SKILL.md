@@ -1,6 +1,6 @@
 ---
 name: caloogy-docs
-description: Read and write the user's Caloogy Docs (docs.caloogy.com) with the caloogy-docs CLI — list the documents they can open (their own and ones shared with them), read any of them as Markdown, and create, edit, append to, rename, trash or restore their own documents. Use when the user mentions Caloogy Docs, docs.caloogy.com, a docs.caloogy.com link, or asks to save / write / update / read one of their cloud documents.
+description: Read and write the user's Caloogy Docs (docs.caloogy.com) with the caloogy-docs CLI — list the documents they can open (their own and ones shared with them), read any of them as Markdown, create, edit, append to and rename their own documents and ones shared with them as an editor, and trash or restore their own. Use when the user mentions Caloogy Docs, docs.caloogy.com, a docs.caloogy.com link, or asks to save / write / update / read one of their cloud documents.
 ---
 
 # caloogy-docs
@@ -12,9 +12,9 @@ every command takes either. Each save bumps its revision (`rev`).
 What the CLI may do (the server enforces it):
 
 - **Read** every document the user can open: their own, ones shared with them (any role), and public ones by link.
-- **Change only the user's own documents** (`role: "owner"`): new, write, append, edit, rename, delete (to the trash),
-  restore. Documents shared with them are read-only here even if they can edit them on the website — say so, and
-  offer to make an own copy (`read … | new "…" --file -`).
+- **Change** their own documents and ones shared with them as **edit / manage** (`can_write: true`): write, append,
+  edit, rename. Shared as **view** (or public) = read-only — say so, and offer an own copy (`read … | new "…" --file -`).
+- **Trash / restore** only their own documents (`role: "owner"`); `new` always creates one of their own.
 - It can't share, change who can see a document, or delete anything permanently. Point the user to the website
   (Share button, Trash page) for those.
 
@@ -57,12 +57,13 @@ the tool isn't installed: `uv tool install "git+https://github.com/iamtheozzz/ca
 - The website shows changes on reload. If the user has the document open and typing, their next save may say the
   document changed — tell them to reload before editing there.
 - Shared documents are private to the people they're shared with: don't paste them elsewhere unless the user asks.
+  When you change someone else's document, keep to what the user asked — others are reading and editing it too.
 
 ## JSON shapes
 
 - `list --json` → `{"mine": [...], "shared": [...]}`; each `{id, title, url, owner, owner_name?, role, level, updated, rev}`.
   `role`: owner / manage / edit / view; `level`: 1 public, 2 anyone signed in, 3 people invited, 4 only the owner.
-- `read --json` → the same plus `content`, `created`, `can_write` (true only for the user's own).
+- `read --json` → the same plus `content`, `created`, `can_write` (owner, edit or manage).
 - `new` / `write` / `append` / `edit` / `rename` → `{ok, id, url, rev, updated}`.
 - Errors: `{"error": "..."}` with exit code 1 (failed), 2 (bad arguments) or 3 (not logged in / token revoked → `login`).
 
