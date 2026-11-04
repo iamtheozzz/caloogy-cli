@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "caloogy-meet"
+dynamic = ["version"]
+description = "Command line for meet.caloogy.com (video) and call.caloogy.com (voice) — for you and for Claude Code / Codex"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+caloogy-meet = "caloogy_meet.cli:main_meet"
+caloogy-call = "caloogy_meet.cli:main_call"
+
+[tool.setuptools.dynamic]
+version = { attr = "caloogy_meet.__version__" }
+
+[tool.setuptools.package-data]
+caloogy_meet = ["SKILL-meet.md", "SKILL-call.md"]
