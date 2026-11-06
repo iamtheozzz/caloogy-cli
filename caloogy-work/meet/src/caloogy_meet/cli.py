@@ -51,6 +51,37 @@ class Fail(Exception):
         self.code = code
 
 
+ALLOWED_DOMAINS = ("caloogy.com", "theozhang.me")
+
+
+def checked_url(url: str) -> str:
+    """Your token only ever goes to Caloogy. A --url, environment variable or config file pointing anywhere else (say, one
+    an AI tool was talked into using by a message it read) is refused rather than sent the token."""
+    p = urllib.parse.urlsplit(url)
+    host = (p.hostname or "").lower()
+    local = p.scheme == "http" and (host in ("localhost", "127.0.0.1") or host.endswith(".localhost"))
+    ours = p.scheme == "https" and any(host == d or host.endswith("." + d) for d in ALLOWED_DOMAINS)
+    if not (local or ours) or p.username or p.password:
+        raise Fail(f"Refusing to use {url!r}: only https://*.caloogy.com is allowed, so your token can't be sent anywhere else.", 2)
+    return url
+
+
+class _StayOnHost(urllib.request.HTTPRedirectHandler):
+    """urllib would carry the Authorization header along on a redirect to any host; ours never leave for another site."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        checked_url(newurl)
+        if urllib.parse.urlsplit(newurl).hostname != urllib.parse.urlsplit(req.full_url).hostname:
+            new = super().redirect_request(req, fp, code, msg, headers, newurl)
+            if new is not None:
+                new.remove_header("Authorization")
+            return new
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_StayOnHost)
+
+
 # ---------------------------------------------------------------- config
 
 def config_path(t: Tool) -> Path:
@@ -81,7 +112,7 @@ def write_config(t: Tool, cfg: dict) -> None:
 
 def base_url(args) -> str:
     t = args.tool
-    return (getattr(args, "url", None) or os.environ.get(f"{t.env}_URL") or read_config(t).get("url") or t.site).rstrip("/")
+    return checked_url((getattr(args, "url", None) or os.environ.get(f"{t.env}_URL") or read_config(t).get("url") or t.site).rstrip("/"))
 
 
 def token(t: Tool) -> str:
@@ -103,7 +134,7 @@ def request(args, method: str, path: str, body=None, auth: bool = True) -> tuple
     req = urllib.request.Request(base_url(args) + "/meet/api" + path, method=method, headers=headers,
                                  data=None if body is None else json.dumps(body).encode())
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with _OPENER.open(req, timeout=30) as r:
             return r.status, json.loads(r.read() or b"{}")
     except urllib.error.HTTPError as e:
         try:
@@ -201,7 +232,7 @@ def cmd_login(args) -> None:
               f"  code: {device['user_code']}\n\nWaiting for approval (up to 10 minutes)...", file=sys.stderr, flush=True)
         if not args.no_browser:
             try:
-                webbrowser.open(device["verify_url"])
+                webbrowser.open(checked_url(device["verify_url"]))
             except Exception:
                 pass
     deadline = time.time() + float(device.get("expires_in") or 600)
